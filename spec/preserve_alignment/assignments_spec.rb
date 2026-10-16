@@ -5,6 +5,114 @@ require_relative "../../lib/syntax_tree/plugin/preserve_alignment"
 module SyntaxTree
   module PreserveAlignment
     RSpec.describe Assignments do
+      it "preserves logical-or assignment alignment while formatting and wrapping values" do
+        source = "a      ||= [111111,222222]\nlonger ||= [333333,444444]\n"
+
+        result = SyntaxTree.format(source, 20)
+
+        expect(result).to eq(<<~'RUBY')
+          a      ||= [
+            111_111,
+            222_222
+          ]
+          longer ||= [
+            333_333,
+            444_444
+          ]
+        RUBY
+        expect(SyntaxTree.format(result, 20)).to eq(result)
+      end
+
+      it "normalizes a lone logical-or assignment" do
+        expect(SyntaxTree.format("a    ||= 1\n")).to eq("a ||= 1\n")
+      end
+
+      it "does not align previously unaligned logical-or assignments" do
+        source = "a ||= 1\nlonger ||= 2\n"
+
+        expect(SyntaxTree.format(source)).to eq(source)
+      end
+
+      it "separates series when assignment operators change" do
+        source = "a    = 1\nb    ||= 2\nc    = 3\nd    ||= 4\n"
+
+        expect(SyntaxTree.format(source)).to eq(
+          "a = 1\nb ||= 2\nc = 3\nd ||= 4\n"
+        )
+      end
+
+      it "excludes logical-or setter assignments" do
+        source = "obj.a    ||= 1\nobj.b    ||= 2\n"
+
+        expect(SyntaxTree.format(source)).to eq("obj.a ||= 1\nobj.b ||= 2\n")
+      end
+
+      it "excludes logical-and assignments" do
+        source = "a    &&= 1\nb    &&= 2\n"
+
+        expect(SyntaxTree.format(source)).to eq("a &&= 1\nb &&= 2\n")
+      end
+
+      it "ends logical-or series at standalone comments" do
+        source = "a    ||= 1\n# boundary\nb    ||= 2\n"
+
+        expect(SyntaxTree.format(source)).to eq(
+          "a ||= 1\n# boundary\nb ||= 2\n"
+        )
+      end
+
+      it "excludes ignored logical-or assignments from series" do
+        source = "# stree-ignore\na    ||= [1,2]\nb    ||= [3,4]\n"
+
+        expect(SyntaxTree.format(source)).to eq(
+          "# stree-ignore\na    ||= [1,2]\nb ||= [3, 4]\n"
+        )
+      end
+
+      it "preserves nested logical-or series and trailing comments" do
+        source = <<~'RUBY'
+          def example
+              @a    ||= [1,2] # note
+              @long ||= [3,4]
+              call do
+                  x    ||= 1
+                  name ||= 2
+              end
+              @@a   ||= 3
+              $long ||= 4
+          end
+        RUBY
+
+        result = SyntaxTree.format(source)
+
+        expect(result).to eq(<<~'RUBY')
+          def example
+            @a    ||= [1, 2] # note
+            @long ||= [3, 4]
+            call do
+              x    ||= 1
+              name ||= 2
+            end
+            @@a   ||= 3
+            $long ||= 4
+          end
+        RUBY
+        expect(SyntaxTree.format(result)).to eq(result)
+      end
+
+      it "preserves logical-or series with heredoc values" do
+        source = <<~'RUBY'
+          a      ||= <<~TEXT
+            hello
+          TEXT
+          longer ||= <<~TEXT
+            world
+          TEXT
+        RUBY
+
+        expect(SyntaxTree.format(source)).to eq(source)
+      end
+
       it "does not preserve padding for a single assignment" do
         source = "a    = 1\n"
 

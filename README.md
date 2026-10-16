@@ -7,6 +7,9 @@ or block declarations. It does not align previously unaligned code.
 a      = [1, 2]
 longer = [3, 4]
 
+cached      ||= [1, 2]
+longer_name ||= [3, 4]
+
 let(:invitation_repository)  { invitation_repository }
 let(:restriction_repository) { restriction_repository }
 let!(:outbox_events)         { outbox_events }
@@ -28,14 +31,16 @@ Alternatively add `--plugins=plugin/preserve_alignment` to your project's
 ## Rules
 
 - At least two sibling assignments must already have their equals signs at the
-  same column and share an indentation level.
+  same column and share an indentation level. Both `=` and `||=` are supported;
+  alignment is measured at the start of the operator. Switching between them
+  ends a series.
 - Blank lines, standalone comments, other statements, different columns and
   ignored statements end a series.
 - Local, instance, class and global variables, and simple constants are supported.
 - Multiline values and trailing comments are supported. Values still undergo
   ordinary Syntax Tree formatting, including line wrapping.
 - Names of equal length need no extra padding to qualify.
-- Multiple assignments, setters, constant paths, operator assignments,
+- Multiple assignments, setters, constant paths, operators other than `=` and `||=`,
   non-ASCII targets and lines containing tabs are left to the standard formatter.
 - Existing spacing is preserved relative to the normalized indentation.
 
@@ -63,7 +68,7 @@ Alternatively add `--plugins=plugin/preserve_alignment` to your project's
 Each inspects `Statements#format` and stores its own context on the formatter,
 restoring it after nested statement lists. They never mix candidates.
 
-Assignments customize `Assign#format`. Blocks customize
+Assignments customize `Assign#format` and `OpAssign#format`. Blocks customize
 `MethodAddBlock#format_contents` and the block opening formatters, leaving body
 formatting to Syntax Tree. Padding is emitted before PrettierPrint calculates
 line breaks. State belongs to each formatter, not to the AST or a global variable.

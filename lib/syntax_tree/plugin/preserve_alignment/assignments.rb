@@ -20,7 +20,13 @@ module SyntaxTree
 
           body.each do |statement|
             candidate = nil
-            if statement.is_a?(Assign) && statement.target.is_a?(VarField) &&
+            if (
+                 statement.is_a?(Assign) ||
+                   (
+                     statement.is_a?(OpAssign) &&
+                       statement.operator.value == "||="
+                   )
+               ) && statement.target.is_a?(VarField) &&
                  statement.comments.none?(&:leading?) &&
                  statement.target.comments.empty?
               target =
@@ -42,7 +48,9 @@ module SyntaxTree
 
               if target.ascii_only? && !line.include?("\t") &&
                    statement.location.start_column == indentation &&
-                   tokens.length == 1 && tokens.first[1..2] == [:on_op, "="] &&
+                   tokens.length == 1 &&
+                   tokens.first[1..2] ==
+                     [:on_op, statement.is_a?(Assign) ? "=" : "||="] &&
                    tokens.first[0][0] == 1
                 column =
                   statement.target.location.end_column + tokens.first[0][1]
@@ -50,14 +58,16 @@ module SyntaxTree
                   statement,
                   column,
                   indentation,
-                  column - indentation - target.length
+                  column - indentation - target.length,
+                  tokens.first[2]
                 ]
               end
             end
 
             unless candidate && series.any? &&
                      statement.location.start_line == previous_end_line + 1 &&
-                     candidate[1..2] == series.last[1..2]
+                     candidate[1..2] == series.last[1..2] &&
+                     candidate[4] == series.last[4]
               series.each do |entry|
                 padding[entry[0]] = entry[3]
               end if series.length >= 2
@@ -86,7 +96,8 @@ module SyntaxTree
           # Keep Syntax Tree 6.3.0's grouping and value indentation unchanged.
           q.group do
             q.format(target)
-            q.text(" " * spaces + "=")
+            q.text(" " * spaces)
+            is_a?(OpAssign) ? q.format(operator) : q.text("=")
 
             if skip_indent?
               q.text(" ")

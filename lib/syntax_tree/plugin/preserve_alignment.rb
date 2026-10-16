@@ -8,6 +8,7 @@ module SyntaxTree
   Formatter.prepend(PreserveAlignment::Assignments::FormatterContext)
   Statements.prepend(PreserveAlignment::Assignments::StatementFormatting)
   Assign.prepend(PreserveAlignment::Assignments::AssignmentFormatting)
+  OpAssign.prepend(PreserveAlignment::Assignments::AssignmentFormatting)
 
   Formatter.prepend(PreserveAlignment::Blocks::FormatterContext)
   Statements.prepend(PreserveAlignment::Blocks::StatementFormatting)
