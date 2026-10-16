@@ -26,7 +26,13 @@ module SyntaxTree
                      statement.is_a?(OpAssign) &&
                        statement.operator.value == "||="
                    )
-               ) && statement.target.is_a?(VarField) &&
+               ) &&
+                 (
+                   statement.target.is_a?(VarField) ||
+                     statement.target.is_a?(ARefField)
+                 ) &&
+                 statement.target.location.start_line ==
+                   statement.target.location.end_line &&
                  statement.comments.none?(&:leading?) &&
                  statement.target.comments.empty?
               target =
@@ -58,7 +64,14 @@ module SyntaxTree
                   statement,
                   column,
                   indentation,
-                  column - indentation - target.length,
+                  column - indentation -
+                    (
+                      if statement.target.is_a?(ARefField)
+                        SyntaxTree.format(target, 1_000_000).strip.length
+                      else
+                        target.length
+                      end
+                    ),
                   tokens.first[2]
                 ]
               end

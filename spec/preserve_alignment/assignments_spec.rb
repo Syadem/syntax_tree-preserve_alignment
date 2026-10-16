@@ -23,6 +23,45 @@ module SyntaxTree
         expect(SyntaxTree.format(result, 20)).to eq(result)
       end
 
+      it "preserves indexed logical-or assignments while normalizing targets" do
+        source = <<~'RUBY'
+          def example
+              injector[ :config ]    ||= [1,2]
+              injector[:db]          ||= [3,4]
+          end
+        RUBY
+
+        result = SyntaxTree.format(source)
+
+        expect(result).to eq(<<~'RUBY')
+          def example
+            injector[:config]      ||= [1, 2]
+            injector[:db]          ||= [3, 4]
+          end
+        RUBY
+        expect(SyntaxTree.format(result)).to eq(result)
+      end
+
+      it "preserves indexed plain assignments" do
+        source = "items[:a]    = 1\nitems[:long] = 2\n"
+
+        expect(SyntaxTree.format(source)).to eq(source)
+      end
+
+      it "normalizes a lone indexed assignment" do
+        expect(SyntaxTree.format("items[:a]    ||= 1\n")).to eq(
+          "items[:a] ||= 1\n"
+        )
+      end
+
+      it "excludes multiline indexed targets" do
+        source = "items[\n  :a\n]    ||= 1\nitems[:long] ||= 2\n"
+
+        expect(SyntaxTree.format(source)).to eq(
+          "items[:a] ||= 1\nitems[:long] ||= 2\n"
+        )
+      end
+
       it "normalizes a lone logical-or assignment" do
         expect(SyntaxTree.format("a    ||= 1\n")).to eq("a ||= 1\n")
       end

@@ -10,6 +10,9 @@ longer = [3, 4]
 cached      ||= [1, 2]
 longer_name ||= [3, 4]
 
+injector[:config] ||= config
+injector[:db]     ||= db
+
 let(:invitation_repository)  { invitation_repository }
 let(:restriction_repository) { restriction_repository }
 let!(:outbox_events)         { outbox_events }
@@ -21,7 +24,7 @@ Use the Ruby environment that provides your `stree` executable:
 
 ```sh
 gem build syntax_tree-preserve_alignment.gemspec
-gem install ./syntax_tree-preserve_alignment-0.2.0.gem
+gem install ./syntax_tree-preserve_alignment-0.3.0.gem
 stree write --plugins=plugin/preserve_alignment example.rb
 ```
 
@@ -36,7 +39,9 @@ Alternatively add `--plugins=plugin/preserve_alignment` to your project's
   ends a series.
 - Blank lines, standalone comments, other statements, different columns and
   ignored statements end a series.
-- Local, instance, class and global variables, and simple constants are supported.
+- Local, instance, class and global variables, simple constants, and single-line
+  indexed targets such as `injector[:config]` are supported. Indexed target spacing
+  is normalized while preserving the operator column.
 - Multiline values and trailing comments are supported. Values still undergo
   ordinary Syntax Tree formatting, including line wrapping.
 - Names of equal length need no extra padding to qualify.

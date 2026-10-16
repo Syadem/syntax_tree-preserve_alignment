@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |spec|
   spec.name = "syntax_tree-preserve_alignment"
-  spec.version = "0.2.0"
+  spec.version = "0.3.0"
   spec.summary = "Preserve existing alignment of Ruby assignments and block declarations"
   spec.authors = ["Jean-Denis Koeck"]
   spec.files = Dir["lib/**/*.rb", "README.md"]
